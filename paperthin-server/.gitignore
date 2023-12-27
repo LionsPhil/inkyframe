@@ -1,0 +1,4 @@
+__pycache__
+*.ttf
+# just a dir which then symlinks to image folders as [abcde]
+responses
