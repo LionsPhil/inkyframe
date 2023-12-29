@@ -1,5 +1,7 @@
 # LionsPhil's Inky Frame stuff
 
+Scripts for Pimoroni's [Inky Frame](https://shop.pimoroni.com/products/inky-frame-7-3).
+
 ## New launcher
 
 `main.py` is cleaned-up and rewritten much like I did for Tufty, with the same `boot.txt` direct-boot support.
