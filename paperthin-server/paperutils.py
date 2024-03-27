@@ -30,6 +30,23 @@ _INK_PALETTE = [
     0xEB, 0xE2, 0xD9, # taupe
 ]
 
+def _hexorcize(palindex: int) -> str:
+    palindex *= 3
+    r = _INK_PALETTE[palindex + 0]
+    g = _INK_PALETTE[palindex + 1]
+    b = _INK_PALETTE[palindex + 2]
+    return f"#{r:02x}{g:02x}{b:02x}"
+
+# Export the "native" colors (but note gotcha with last two).
+BLACK = _hexorcize(0)
+WHITE = _hexorcize(1)
+GREEN = _hexorcize(2)
+BLUE = _hexorcize(3)
+RED = _hexorcize(4)
+YELLOW = _hexorcize(5)
+ORANGE = _hexorcize(6)
+TAUPE = _hexorcize(7)
+
 def add_refresh(response: flask.Response, seconds: int, url: str) -> None:
     response.headers.add('Refresh', f'{seconds}; {url}')
 
@@ -126,7 +143,7 @@ def respond_png(image: Image.Image, dither = False) -> flask.Response:
     # photo-suitable compression for an in-memory image.
     buf = io.BytesIO()
     image.save(buf, format='PNG')
-    # If we just give flash the BytesIO, it will stream it as chunked, which
+    # If we just give flask the BytesIO, it will stream it as chunked, which
     # the PaperThin client cannot handle.
     response: flask.Response = flask.make_response(buf.getvalue())
     response.mimetype = 'image/png'
