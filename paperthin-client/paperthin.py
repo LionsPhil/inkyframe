@@ -387,7 +387,8 @@ def any_button_down() -> tuple[typing.Optional[inky_frame.Button], int]:
     else:
         return None, -1
 
-# @micropython.viper  # TODO: Try enabling this
+# viper doesn't support the streaming byte reads we do
+@micropython.native
 def picorle_decode(pri: usocket.socket) -> None:
     print("Decoding PRI2...")
     # Header
@@ -596,17 +597,19 @@ while True:
         button_down.led_on()
         method = 'POST'
         url = _BASE_URL + _BUTTON_PATHS[button_index]
-    elif inky_frame.woken_by_rtc() or usb_loop:
+    else:
         # We slept until our refresh time, one way or another.
         # Remember what it was we wanted to refresh to.
         maybe_wakeup_url = get_wakeup_url()
         if maybe_wakeup_url is None:
-            # ...uh. You ever wake up with amnesia? Guess it'll be hello.
-            # This can happen if the button that caused the wakeup has been
-            # released by the time we look again. :C
-            error = "Woke from sleep but forgot what to load...ouchie."
-            print(error)
-            time.sleep(10)  # Don't tightloop if we're stuck here.
+            if inky_frame.woken_by_rtc() or usb_loop:
+                # ...uh. You ever wake up with amnesia? Guess it'll be hello.
+                # This can happen if the button that caused the wakeup has been
+                # released by the time we look again. :C
+                error = "Woke from sleep but forgot what to load...ouchie."
+                print(error)
+                time.sleep(10)  # Don't tightloop if we're stuck here.
+            # Else this is a clean poweron with no remembered URL.
         else:
             url = maybe_wakeup_url
 
