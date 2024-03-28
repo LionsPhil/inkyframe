@@ -3,9 +3,19 @@ import io
 import picorle
 import wand.image  # Try --no-install-recommends with python3-wand in Debian.
 from PIL import Image, ImageEnhance
+from pkg_resources import packaging
 
 # PIL is "standard", but Wand (ImageMagick) is needed to do better dithering.
 # At least we don't up dragging ing Anti-Grain Geometry too; almost did.
+
+_buggy_old_pil = False
+if packaging.version.parse(Image.__version__) < packaging.version.parse(
+        "9.0.0"):
+    # Slightly naughty print, but PIL's PNG palette support is buggy before v9.
+    print(
+        f"Your PIL version {Image.__version__} is old and buggy;"
+        " try to upgrade.")
+    _buggy_old_pil = True
 
 # See inky_dither() for information about these constants.
 # https://www.instructables.com/Pimoroni-Inky-Frame-Comparison-4-Inch-Vs-57-Inch/
@@ -142,6 +152,9 @@ def respond_png(image: Image.Image, dither = False) -> flask.Response:
     # version of this because it seems very unlikely you want lossy, truecolor,
     # photo-suitable compression for an in-memory image.
     buf = io.BytesIO()
+    if _buggy_old_pil and image.mode != 'RGB':
+        # Lose the palette, which sucks! But white will get corrupted otherwise.
+        image = image.convert('RGB')
     image.save(buf, format='PNG')
     # If we just give flask the BytesIO, it will stream it as chunked, which
     # the PaperThin client cannot handle.
