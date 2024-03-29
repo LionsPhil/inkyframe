@@ -65,7 +65,7 @@ def overlay(image: Image.Image, request: flask.Request) -> Image.Image:
                           val_min: float, val_max: float):
                 last_datum = data.pop(0)
                 for datum in data:
-                    def datum_to_coords(datum: (float, float)):
+                    def datum_to_coords(datum: typing.Tuple[float, float]):
                         (time_frac, value) = datum
                         # Map value in range 0.0--1.0.
                         value -= val_min
