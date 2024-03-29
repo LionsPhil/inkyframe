@@ -3,14 +3,14 @@ import io
 import picorle
 import wand.image  # Try --no-install-recommends with python3-wand in Debian.
 from PIL import Image, ImageEnhance
-from pkg_resources import packaging
 
 # PIL is "standard", but Wand (ImageMagick) is needed to do better dithering.
 # At least we don't up dragging ing Anti-Grain Geometry too; almost did.
 
+# pkg_resources.packaging is the main culprit in an introduced memory leak...
+# roll our own stupid parse(), only want the major version.
 _buggy_old_pil = False
-if packaging.version.parse(Image.__version__) < packaging.version.parse(
-        "9.0.0"):
+if int(Image.__version__.split('.', 1).pop(0)) < 9:
     # Slightly naughty print, but PIL's PNG palette support is buggy before v9.
     print(
         f"Your PIL version {Image.__version__} is old and buggy;"
