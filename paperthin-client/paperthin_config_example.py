@@ -19,7 +19,7 @@ _WIFI_COUNTRY = "GB"
 
 # After a retryable serious error (like failing to connect to the wireless),
 # reboot after this many minutes.
-_ERROR_RETRY_TIME = 5
+_ERROR_RETRY_TIME = 15
 # Don't repaint the screen for retryable serious errors; keep the previous
 # display.
 _ERROR_HIDING = True
@@ -43,7 +43,8 @@ _URLFILE_NAME = "paperthin.url"
 # Brightness for wireless LED states.
 _WIFI_LED_CONNECTING_BRIGHTNESS = 1.0
 _WIFI_LED_FETCHING_BRIGHTNESS = 0.25
-_WIFI_LED_HEARTBEAT_BRIGHTNESS = 0.125
+_WIFI_LED_DECODING_BRIGHTNESS = 0.125
+_WIFI_LED_HEARTBEAT_BRIGHTNESS = 0.0625
 _WIFI_LED_STANDBY_BRIGHTNESS = 0.0
 # Force WiFi to reconnect if it appears to already be connected.
 _WIFI_FORCE_RECONNECT = True

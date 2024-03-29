@@ -27,6 +27,7 @@ from paperthin_config import (PicoGraphics, DISPLAY, _BASE_URL, _HELLO_PATH,
                               _TEMPFILE_THRESHOLD, _TEMPFILE_NAME,
                               _URLFILE_NAME, _WIFI_LED_CONNECTING_BRIGHTNESS,
                               _WIFI_LED_FETCHING_BRIGHTNESS,
+                              _WIFI_LED_DECODING_BRIGHTNESS,
                               _WIFI_LED_HEARTBEAT_BRIGHTNESS,
                               _WIFI_LED_STANDBY_BRIGHTNESS,
                               _WIFI_FORCE_RECONNECT)
@@ -478,6 +479,28 @@ def maybe_buffer_to_file(size: int, socket: usocket.socket) -> bool:
     else:
         return False
 
+def display_using_decoder(headers: typing.Dict[str, str],
+                          socket: usocket.socket,
+                          decoder,
+                          **decoder_args: typing.Dict[str, typing.Any]) -> None:
+    size: int = int(headers.get("Content-Length", 0))
+    too_big = maybe_buffer_to_file(size, socket)
+    if too_big:
+        inky_frame.led_wifi.brightness(_WIFI_LED_DECODING_BRIGHTNESS)
+        decoder.open_file(_TEMPFILE_NAME)
+    else:
+        data = bytearray(size)
+        socket.readinto(data)
+        inky_frame.led_wifi.brightness(_WIFI_LED_DECODING_BRIGHTNESS)
+        decoder.open_RAM(data)
+    # Fight for as much RAM as we can get.
+    # (...assuming open_RAM keeps the underlying bytes marked in use...)
+    socket.close()
+    gc.collect()
+    decoder.decode(0, 0, **decoder_args)
+    if too_big:
+        os.remove(_TEMPFILE_NAME)
+
 def display_response(headers: typing.Dict[str, str],
                      socket: usocket.socket) -> None:
     """Display one of the supported HTTP responses."""
@@ -502,40 +525,17 @@ def display_response(headers: typing.Dict[str, str],
         print("Rendering JPEG...")
         decoder = jpegdec.JPEG(display)
         dither = (headers.get("X-Dither", "") != "")
-        too_big = maybe_buffer_to_file(size, socket)
-        if too_big:
-            decoder.open_file(_TEMPFILE_NAME)
-        else:
-            data = bytearray(size)
-            socket.readinto(data)
-            decoder.open_RAM(data)
-        # Fight for as much RAM as we can get.
-        # (...assuming open_RAM keeps the underlying bytes marked in use...)
-        socket.close()
-        gc.collect()
-        decoder.decode(0, 0, dither=dither)
-        if too_big:
-            os.remove(_TEMPFILE_NAME)
+        display_using_decoder(headers, socket, decoder, dither=dither)
     elif type == "image/png":
         # Ditto.
         print("Rendering PNG...")
         decoder = pngdec.PNG(display)
         dither = (headers.get("X-Dither", "") != "")
         mode = pngdec.PNG_DITHER if dither else pngdec.PNG_POSTERISE
-        too_big = maybe_buffer_to_file(size, socket)
-        if too_big:
-            decoder.open_file(_TEMPFILE_NAME)
-        else:
-            data = bytearray(size)
-            socket.readinto(data)
-            decoder.open_RAM(data)
-        socket.close()
-        gc.collect()
-        decoder.decode(0, 0, mode=mode)
-        if too_big:
-            os.remove(_TEMPFILE_NAME)
+        display_using_decoder(headers, socket, decoder, mode=mode)
     elif type == "image/x.pico-rle":
         # While slow and dumb, this format streams directly to the display.
+        inky_frame.led_wifi.brightness(_WIFI_LED_DECODING_BRIGHTNESS)
         picorle_decode(socket)
         socket.close()
     else:
