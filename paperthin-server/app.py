@@ -57,9 +57,10 @@ def button(index: int, request: flask.Request) -> flask.Response:
         return paperutils.respond_txt("Directory for that button has no files")
     response: flask.Response
     if filename.lower().endswith(('jpg', 'png', 'pri')):
-        im = Image.open(os.path.join(directory, filename))
-        im = overlay(im, request)
-        response = encode_for_inky(im, request)
+        with Image.open(os.path.join(directory, filename)) as im:
+            overlaid_im = overlay(im, request)
+            response = encode_for_inky(overlaid_im, request)
+            overlaid_im.close()
     else:
         response = paperutils.respond_file(directory, filename, True)
     # 10 minutes less one, for PRI decode and e-ink refresh.
@@ -80,4 +81,5 @@ def encode_for_inky(image: Image.Image, request: flask.Request
     if request.user_agent.string == "PaperThin/1":
         return paperutils.respond_pri(paperutils.inky_dither(image))
     else:
+        # Add an inky_dither here (but keep PNG) to test in a browser.
         return paperutils.respond_png(image)

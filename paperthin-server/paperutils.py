@@ -123,8 +123,10 @@ def inky_dither(original: Image.Image, use_taupe = False, use_wand = True
     else:
         dithered = original.quantize(palette=palimg)
 
-    # Commenting this and loading in a browser will "simulate" output.
+    # Forcefully remap indexwise to the palette.
     dithered.putpalette(picographics_palette)
+
+    palimg.close()
     return dithered
 
 def plain_dither(original: Image.Image, use_taupe = False) -> Image.Image:
