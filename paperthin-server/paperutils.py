@@ -3,6 +3,8 @@ import io
 import picorle
 import wand.image  # Try --no-install-recommends with python3-wand in Debian.
 from PIL import Image, ImageEnhance
+from wand.color import Color
+from wand.drawing import Drawing
 
 # PIL is "standard", but Wand (ImageMagick) is needed to do better dithering.
 # At least we don't up dragging ing Anti-Grain Geometry too; almost did.
@@ -62,7 +64,7 @@ def add_refresh(response: flask.Response, seconds: int, url: str) -> None:
 
 def wand_to_pil(wand_image: wand.image.Image) -> Image.Image:
     # The encode/decode here is kind of stupid, but.
-    return Image.open(io.BytesIO(wand_image.make_blob("png")), formats=["PNG"])
+    return Image.open(io.BytesIO(wand_image.make_blob('png')), formats=['PNG'])
 
 def pil_to_wand(pil_image: Image.Image) -> wand.image.Image:
     buf = io.BytesIO()
@@ -147,8 +149,64 @@ def suggested_enhance(original: Image.Image) -> Image.Image:
     # Wand's level() seems to be the inverse of what we want.
     return ImageEnhance.Brightness(im).enhance(1.02)
 
-# Possibly consider a "resize/crop to width/height query params" helper.
-# (request.args should have the query args)
+def resize_image(image: Image.Image, request: flask.Request) -> Image.Image:
+    """Resize an image to fit within the dimensions in the request."""
+    want_w = request.args.get('w', 800, type=int)
+    want_h = request.args.get('h', 480, type=int)
+    want_aspect = float(want_w) / float(want_h)
+    got_w = image.width
+    got_h = image.height
+    got_aspect = float(got_w) / float(got_h)
+    w: int
+    h: int
+    if got_aspect > want_aspect:
+        # Width-constrained scaling
+        w = want_w
+        h = int(want_w / got_aspect)
+    else:
+        # Height-constrained scaling
+        w = int(want_h * got_aspect)
+        h = want_h
+    print(
+        f'want {want_w}x{want_h} aspect {want_aspect}, '
+        f'got {got_w}x{got_h} aspect {got_aspect}, calc {w}x{h}')
+
+    resized = image.resize([w, h])
+    if resized.width != want_w or resized.height != want_h:
+        # Calculate the average color using another resize, then pad the image.
+        padding = image.resize([1, 1])
+        padding = padding.resize([want_w, want_h])
+        offset_w = int((want_w - resized.width) / 2)
+        offset_h = int((want_h - resized.height) / 2)
+        padding.paste(resized, [offset_w, offset_h])
+        resized.close()
+        resized = padding
+
+    return resized
+
+def caption(image: Image.Image, caption: str) -> Image.Image:
+    """Return a new version of the image with a caption added."""
+    # Intended as a very generic easy fixed thing. The easiest way to customize
+    # it is to replace it.
+    wim = pil_to_wand(image)
+    with Drawing() as draw:
+        draw.stroke_width = 0
+        draw.push()
+        draw.fill_opacity = 0.5
+        draw.fill_color = Color('black')
+        draw.rectangle(left=0, top=image.height - 24,
+                       right=image.width, bottom=image.height)
+        draw.pop()
+        draw.font = '/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf'
+        draw.font_size = 18
+        draw.gravity = 'south_west'
+        draw.fill_color = Color('white')
+        draw.text(0, 0, caption)
+        draw(wim)
+    image = wand_to_pil(wim)
+    wim.close()
+    return image
+
 
 def respond_png(image: Image.Image, dither = False) -> flask.Response:
     """Build a response from a PIL image by PNG-encoding it."""
