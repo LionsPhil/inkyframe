@@ -48,3 +48,10 @@ _WIFI_LED_HEARTBEAT_BRIGHTNESS = 0.0625
 _WIFI_LED_STANDBY_BRIGHTNESS = 0.0
 # Force WiFi to reconnect if it appears to already be connected.
 _WIFI_FORCE_RECONNECT = True
+# Clear the display to blank before updating to the next image.
+# This will delay reading the HTTP response for ~40 seconds for PRI; make sure
+# your server config is patient enough with clients. (The total update time
+# will also raise to ~80 seconds.)
+# https://forums.pimoroni.com/t/inky-frame-7-3-burn-in/24574
+# Error screens ignore this; they're delayed enough as it is.
+_DOUBLE_UPDATE_CLEAR = False

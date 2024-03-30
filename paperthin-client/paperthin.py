@@ -30,7 +30,8 @@ from paperthin_config import (PicoGraphics, DISPLAY, _BASE_URL, _HELLO_PATH,
                               _WIFI_LED_DECODING_BRIGHTNESS,
                               _WIFI_LED_HEARTBEAT_BRIGHTNESS,
                               _WIFI_LED_STANDBY_BRIGHTNESS,
-                              _WIFI_FORCE_RECONNECT)
+                              _WIFI_FORCE_RECONNECT,
+                              _DOUBLE_UPDATE_CLEAR)
 
 # Set up the display and pin that indicates USB power.
 # https://forums.pimoroni.com/t/inky-frame-deep-sleep-explanation/19965/9
@@ -70,7 +71,10 @@ def red_screen_of_death(message: str,
                         exception: typing.Optional[Exception] = None
                         ) -> typing.NoReturn:
     """Stop and sleep with a *fatal* error. Autoreboot if slow-retriable."""
-    print(f"RSOD: {message}")
+    # print() (throughout) could really do with flushing a few places, but
+    # MicroPython sadly does not support (crashes on!) either the keyword arg
+    # flush=True print() form, or the full sys.stdout.flush().
+    print(f"RSOD: {message}")  # Should flush.
     time.sleep(0.1)  # Try to encourage serial to flush BEFORE display.update().
     inky_frame.led_busy.on()  # Christmas tree mode (but not network)!
     inky_frame.button_a.led_on()
@@ -479,6 +483,14 @@ def maybe_buffer_to_file(size: int, socket: usocket.socket) -> bool:
     else:
         return False
 
+def maybe_double_clear() -> None:
+    if _DOUBLE_UPDATE_CLEAR:
+        print("...preliminary clear to taupe...")  # Should flush.
+        display.set_pen(inky_frame.TAUPE)
+        display.clear()
+        display.update()
+        print("...proceeding to update framebuffer...")
+
 def display_using_decoder(headers: typing.Dict[str, str],
                           socket: usocket.socket,
                           decoder,
@@ -497,6 +509,7 @@ def display_using_decoder(headers: typing.Dict[str, str],
     # (...assuming open_RAM keeps the underlying bytes marked in use...)
     socket.close()
     gc.collect()
+    maybe_double_clear()
     decoder.decode(0, 0, **decoder_args)
     if too_big:
         os.remove(_TEMPFILE_NAME)
@@ -536,13 +549,14 @@ def display_response(headers: typing.Dict[str, str],
     elif type == "image/x.pico-rle":
         # While slow and dumb, this format streams directly to the display.
         inky_frame.led_wifi.brightness(_WIFI_LED_DECODING_BRIGHTNESS)
+        maybe_double_clear()
         picorle_decode(socket)
         socket.close()
     else:
         # This is *really* borderline use of "fatal", but.
         red_screen_of_death(f"Cannot display server response of type '{type}'!",
                             True)
-    print("...done!")
+    print("...done!")  # Should flush.
     display.update()
 
 # Ok. Time to do stuff. Reset LEDs and get us online.
