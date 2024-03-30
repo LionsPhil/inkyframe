@@ -15,6 +15,8 @@ That would be `{"script": "daily_activity", "name": "Daily Activity", "direct": 
 
 PaperThin is a thin-client setup for Inky Frame, allowing you to eschew on-board storage for pushing it off to a server.
 
+![Example photo frame with overlaid time, date, and environment sensor graph](paperthin-silicon-docks.jpg)
+
 ### Server
 
 `paperthin-server` is a simple Flask server that serves random images encoded nicely for the frame, selected from a category per-button.
