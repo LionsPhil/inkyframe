@@ -117,6 +117,9 @@ def inky_dither(original: Image.Image, use_taupe = False, use_wand = True
         dithered = dithered.convert('RGB')
         # This is spelled Image.Dither.NONE in newer PIL, but old is compatible.
         dithered = dithered.quantize(palette=palimg, dither=Image.NONE)
+        # Give the GC a hand.
+        wand_palimg.close()
+        wand_img.close()
     else:
         dithered = original.quantize(palette=palimg)
 
