@@ -41,7 +41,16 @@ def button_d():
 
 @app.route("/e", methods=("GET", "POST"))
 def button_e():
-    return button(4, flask.request)
+    #return button(4, flask.request)
+    import wildlife
+    (image, caption) = wildlife.wildlife()
+    resized = paperutils.resize_image(image, flask.request)
+    image.close()
+    image = paperutils.caption(resized, caption.split('.', 1)[0])
+    resized.close()
+    response = encode_for_inky(image, flask.request)
+    image.close()
+    return response
 
 @app.route("/heartbeat")
 def heartbeat():
