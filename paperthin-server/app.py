@@ -41,7 +41,10 @@ def button_d():
 
 @app.route("/e", methods=("GET", "POST"))
 def button_e():
+    # For normal image behaviour:
     #return button(4, flask.request)
+
+    # As an example, to use random wildlife:
     import wildlife
     (image, caption) = wildlife.wildlife()
     resized = paperutils.resize_image(image, flask.request)
@@ -50,6 +53,7 @@ def button_e():
     resized.close()
     response = encode_for_inky(image, flask.request)
     image.close()
+    paperutils.add_refresh(response, 60 * 60, flask.request.base_url)
     return response
 
 @app.route("/heartbeat")
