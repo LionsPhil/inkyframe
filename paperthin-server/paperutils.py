@@ -157,14 +157,11 @@ def resize_image(image: Image.Image, request: flask.Request) -> Image.Image:
         # Height-constrained scaling
         w = int(want_h * got_aspect)
         h = want_h
-    print(
-        f'want {want_w}x{want_h} aspect {want_aspect}, '
-        f'got {got_w}x{got_h} aspect {got_aspect}, calc {w}x{h}')
 
     resized = image.resize([w, h])
     if resized.width != want_w or resized.height != want_h:
         # Calculate the average color using another resize, then pad the image.
-        padding = image.resize([1, 1])
+        padding = image.resize([4, int(4 / want_aspect)])
         padding = padding.resize([want_w, want_h])
         offset_w = int((want_w - resized.width) / 2)
         offset_h = int((want_h - resized.height) / 2)
