@@ -9,16 +9,6 @@ from wand.drawing import Drawing
 # PIL is "standard", but Wand (ImageMagick) is needed to do better dithering.
 # At least we don't up dragging ing Anti-Grain Geometry too; almost did.
 
-# pkg_resources.packaging is the main culprit in an introduced memory leak...
-# roll our own stupid parse(), only want the major version.
-_buggy_old_pil = False
-if int(Image.__version__.split('.', 1).pop(0)) < 9:
-    # Slightly naughty print, but PIL's PNG palette support is buggy before v9.
-    print(
-        f"Your PIL version {Image.__version__} is old and buggy;"
-        " try to upgrade.")
-    _buggy_old_pil = True
-
 # See inky_dither() for information about these constants.
 # https://www.instructables.com/Pimoroni-Inky-Frame-Comparison-4-Inch-Vs-57-Inch/
 _PICOGRAPHICS_PALETTE = [
@@ -215,9 +205,6 @@ def respond_png(image: Image.Image, dither = False) -> flask.Response:
     # version of this because it seems very unlikely you want lossy, truecolor,
     # photo-suitable compression for an in-memory image.
     buf = io.BytesIO()
-    if _buggy_old_pil and image.mode != 'RGB':
-        # Lose the palette, which sucks! But white will get corrupted otherwise.
-        image = image.convert('RGB')
     image.save(buf, format='PNG')
     # If we just give flask the BytesIO, it will stream it as chunked, which
     # the PaperThin client cannot handle.
