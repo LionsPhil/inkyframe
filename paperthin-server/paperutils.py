@@ -245,3 +245,11 @@ def respond_file(directory: str, filename: str, dither: bool) -> flask.Response:
     if dither:
         response.headers['X-Dither'] = 'True'
     return response
+
+def encode_for_inky(image: Image.Image, request: flask.Request
+                    ) -> flask.Response:
+    if request.user_agent.string == "PaperThin/1":
+        return respond_pri(inky_dither(image))
+    else:
+        # Add an inky_dither here (but keep PNG) to test in a browser.
+        return respond_png(image)

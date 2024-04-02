@@ -5,11 +5,14 @@ import random
 from PIL import Image
 
 try:
-    from overlay import overlay
+    from overlay import overlay, button_override
 except ModuleNotFoundError:
     # File doesn't exist is fine; there's no customization. Stub in a no-op.
     def overlay(image: Image.Image, _request: flask.Request) -> Image.Image:
         return image
+    def button_override(_index: int, _request: flask.Request
+                        ) -> flask.Response|None:
+        return None
 # ImportError, however, means customization was attempted and is bad.
 # Let it propagate.
 
@@ -41,26 +44,16 @@ def button_d():
 
 @app.route("/e", methods=("GET", "POST"))
 def button_e():
-    # For normal image behaviour:
-    #return button(4, flask.request)
-
-    # As an example, to use random wildlife:
-    import wildlife
-    (image, caption) = wildlife.wildlife()
-    resized = paperutils.resize_image(image, flask.request)
-    image.close()
-    image = paperutils.caption(resized, caption.split('.', 1)[0])
-    resized.close()
-    response = encode_for_inky(image, flask.request)
-    image.close()
-    paperutils.add_refresh(response, 60 * 60, flask.request.base_url)
-    return response
+    return button(4, flask.request)
 
 @app.route("/heartbeat")
 def heartbeat():
     return "", 204
 
 def button(index: int, request: flask.Request) -> flask.Response:
+    maybe_response = button_override(index, request)
+    if maybe_response:
+        return maybe_response
     directory = os.path.join("responses", "abcde"[index])
     try:
         filename = random.choice(os.listdir(directory))
@@ -72,7 +65,7 @@ def button(index: int, request: flask.Request) -> flask.Response:
     if filename.lower().endswith(('jpg', 'png', 'pri')):
         with Image.open(os.path.join(directory, filename)) as im:
             overlaid_im = overlay(im, request)
-            response = encode_for_inky(overlaid_im, request)
+            response = paperutils.encode_for_inky(overlaid_im, request)
             overlaid_im.close()
     else:
         response = paperutils.respond_file(directory, filename, True)
@@ -88,11 +81,3 @@ def button(index: int, request: flask.Request) -> flask.Response:
     # inky_dither(im)  # <-- PIL dithering lets it down, ends up dark
     # inky_dither(im, use_wand=True)  # <-- Wand sRGB dithering is good, finally
     # plain_dither(suggested_enhance(im)))  # <-- Iffy
-
-def encode_for_inky(image: Image.Image, request: flask.Request
-                    ) -> flask.Response:
-    if request.user_agent.string == "PaperThin/1":
-        return paperutils.respond_pri(paperutils.inky_dither(image))
-    else:
-        # Add an inky_dither here (but keep PNG) to test in a browser.
-        return paperutils.respond_png(image)
