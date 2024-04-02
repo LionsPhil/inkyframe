@@ -4,15 +4,12 @@ import paperutils
 import random
 from PIL import Image
 
+have_overlay = True
 try:
-    from overlay import overlay, button_override
+    import overlay
 except ModuleNotFoundError:
     # File doesn't exist is fine; there's no customization. Stub in a no-op.
-    def overlay(image: Image.Image, _request: flask.Request) -> Image.Image:
-        return image
-    def button_override(_index: int, _request: flask.Request
-                        ) -> flask.Response|None:
-        return None
+    have_overlay = False
 # ImportError, however, means customization was attempted and is bad.
 # Let it propagate.
 
@@ -51,9 +48,10 @@ def heartbeat():
     return "", 204
 
 def button(index: int, request: flask.Request) -> flask.Response:
-    maybe_response = button_override(index, request)
-    if maybe_response:
-        return maybe_response
+    if have_overlay and hasattr(overlay, 'button_override'):
+        maybe_response = overlay.button_override(index, request)
+        if maybe_response:
+            return maybe_response
     directory = os.path.join("responses", "abcde"[index])
     try:
         filename = random.choice(os.listdir(directory))
@@ -64,7 +62,10 @@ def button(index: int, request: flask.Request) -> flask.Response:
     response: flask.Response
     if filename.lower().endswith(('jpg', 'png', 'pri')):
         with Image.open(os.path.join(directory, filename)) as im:
-            overlaid_im = overlay(im, request)
+            if have_overlay and hasattr(overlay, 'overlay'):
+                overlaid_im = overlay.overlay(im, request)
+            else:
+                overlaid_im = im.copy()
             response = paperutils.encode_for_inky(overlaid_im, request)
             overlaid_im.close()
     else:

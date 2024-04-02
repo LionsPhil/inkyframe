@@ -23,11 +23,13 @@ PaperThin is a thin-client setup for Inky Frame, allowing you to eschew on-board
 Put *appropriately-sized* images in `responses/a`, `b`, etc.
 You run this on a Linux server of your choice; e.g. a normal Raspberry Pi or Zero.
 
-Currently `e` is set to demonstrate scraping and manipulating images from the web, something the frame doesn't really have the memory for.
-See `app.py` for details.
-
 If you add an `overlay.py` that implements a function `overlay(image: Image.Image, request: flask.Request) -> Image.Image:`, you can draw over the image before it is returned.
 `overlay-example.py` is an example implementation of this that draws a clock and some graphs from [prometheus-enviro-sensors](https://github.com/LionsPhil/prometheus-enviro-sensors) data.
+
+You can also implement a `button_override(index: int, request: flask.Request) -> flask.Response|None:` function to completely override the behaviour of some buttons.
+The index will be 0 to 4 for buttons A to E; return `None` to use the default behaviour of picking a random image from that folder.
+Again, see `overlay-example.py` for an example, this time pulling images from the Internet involving a lot of scraping and image reprocessing the Inky itself can't really handle.
+(If you want to also apply the image overlay, you will have to add a call to it before forming the response.)
 
 The server can of course be whatever you want (that is somewhat the point), but you may still find the other libraries useful.
 `paperutils.py` is a library for dithering server-side and building PaperThin-specific responses, and can use `picorle.py` to encode in the PRI2 image format that the client knows how to stream directly to the display.
