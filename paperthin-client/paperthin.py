@@ -650,20 +650,25 @@ while True:
         attempts = 5
         succeeded = False
         while not succeeded:
+            attempts -= 1
             try:
                 response_headers, response_socket = http_request(
                     url, None, method, headers)
                 succeeded = True  # We're done!
             except OSError as e:
-                if attempts > 0:
+                if attempts >= 0:
                     # Try to tolerate network blips.
-                    print(f"...ignoring {e}...")
+                    print(f"...ignoring {e} ({attempts} attempts left)...")
                     time.sleep(2)
                 else:
                     # Throw it up a level; out of attempts or different error.
                     raise e
-            attempts -= 1
     except (OSError, UnicodeError, RuntimeError, NotImplementedError) as e:
+        # If we've gone hard-down on trying to reach it, forget any saved URL.
+        # This avoids us getting stuck in a retry/RSOD loop and never listening
+        # to the buttons to pick up a new URL configuration.
+        print("Forgetting any saved wakeup URL in case it's bad.")
+        set_wakeup_url(None)
         red_screen_of_death(f"Failed to {method} {url}:\n\n{e}", True, e)
 
     # Parse the response.
