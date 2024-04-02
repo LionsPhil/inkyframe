@@ -1,8 +1,10 @@
 import flask
 import paperutils
+import random
 import requests
 import time
 import typing
+import wildlife
 from PIL import Image
 from wand.color import Color
 from wand.drawing import Drawing
@@ -12,19 +14,35 @@ _PROMETHEUS = 'http://127.0.0.1:9090'
 def overlay(image: Image.Image, request: flask.Request) -> Image.Image:
     # https://docs.wand-py.org/en/0.6.11/wand/drawing.html
     wim = paperutils.pil_to_wand(image)
+    # Try to avoid completely burning in the date. :/
+    # Pull a different color inks to front, rather than always black/white.
+    dark_colors = [
+        paperutils.BLACK,
+        # paperutils.GREEN, # Too light, and also getting dithered when thin.
+        paperutils.BLUE,
+    ]
+    light_colors = [
+        paperutils.WHITE,
+        paperutils.YELLOW,
+        # paperutils.TAUPE, # Will dither without use_taupe.
+    ]
+    random.shuffle(dark_colors)
+    random.shuffle(light_colors)
     with Drawing() as draw:
         # Draw the time (modulo ten minutes) and date.
         draw.font = 'Antonio-Bold.ttf'
         draw.font_size = 160
+        draw.stroke_width = 4
         draw.gravity = 'forget'  # Allows positioning higher than 'north_west'.
-        draw.stroke_color = Color('black')
-        draw.fill_color = Color('white')
+        draw.stroke_color = Color(dark_colors[0])
+        draw.fill_color = Color(light_colors[0])
         # Run the clock slightly fast, so it's +/-5 mins off, rather than 0..10.
         clock_time = time.localtime(time.time() + (60 * 5))
         # Or try time.strftime('%H:%M')[:4] + 'X') to mask out the last digit.
         draw.text(16, 160, time.strftime('%H:%M', clock_time))
         draw.font = 'Antonio-Regular.ttf'
         draw.font_size = 64
+        draw.stroke_width = 1
         draw.text(16, 160+64, time.strftime('%A', clock_time))  # ', %d %B %Y'
         draw.text(16, 160+64+64, time.strftime('%Y-%m-%d', clock_time))
 
@@ -45,6 +63,7 @@ def overlay(image: Image.Image, request: flask.Request) -> Image.Image:
                 raise GetMetricError('Got less than two humidity data points')
         except GetMetricError as e:
             draw.font_size = 32
+            draw.stroke_width = 1
             draw.stroke_color = Color('white')
             draw.fill_color = Color('red')
             draw.text(X1, Y1+32, f'Graph error: {e}')
@@ -85,7 +104,9 @@ def overlay(image: Image.Image, request: flask.Request) -> Image.Image:
             draw_data(co2_data, 400.0, 2000.0)
 
         draw(wim)
-    return paperutils.wand_to_pil(wim)
+    image = paperutils.wand_to_pil(wim)
+    wim.close()
+    return image
 
 # Hacked-up get_metric_promethus from envsensors trend_display.
 # This is quick and dirty.
@@ -134,3 +155,18 @@ def get_metric_prometheus(metric: str, instance: str, job: str, history: int
         # This means the structure wasn't what we expected according to
         # https://prometheus.io/docs/prometheus/latest/querying/api/#range-queries
         raise GetMetricError('Got unexpected JSON from Prometheus') from err
+
+def button_override(index: int, request: flask.Request) -> flask.Response|None:
+    # Button E only.
+    if index != 4:
+        return None
+
+    (image, caption) = wildlife.wildlife()
+    resized = paperutils.resize_image(image, request)
+    image.close()
+    image = paperutils.caption(resized, caption.split('.', 1)[0])
+    resized.close()
+    response = paperutils.encode_for_inky(image, request)
+    image.close()
+    paperutils.add_refresh(response, 60 * 60, request.base_url)
+    return response
