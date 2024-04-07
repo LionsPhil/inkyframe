@@ -34,6 +34,18 @@ Again, see `overlay-example.py` for an example, this time pulling images from th
 The server can of course be whatever you want (that is somewhat the point), but you may still find the other libraries useful.
 `paperutils.py` is a library for dithering server-side and building PaperThin-specific responses, and can use `picorle.py` to encode in the PRI2 image format that the client knows how to stream directly to the display.
 
+#### Deployment
+
+I recommend using `gunicorn` (packaged for Debian), partially because Flask will complain about using its development server, and partially because PIL or Wand seem to leak memory and being able to restart workers every few requests is a lame but effective mitigation:
+
+```sh
+gunicorn --bind=${YOUR_IP:?}:5000 --timeout 120 --max-requests 10 \
+  --chdir=${SERVER_PATH:?} --access-logfile - 'app:app'
+```
+
+You can omit `--chdir` if you run it from the `paperthin-server` directory.
+You can add `--reload` to have the server restart on source changes, for development.
+
 ### Client
 
 `paperthin-client/paperthin.py` is the thin client side that runs as a normal micropython app on the Inky.
