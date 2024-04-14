@@ -74,9 +74,9 @@ Responses PaperThin understands:
     - PNGDEC seems to always dither. It may be PicoGraphics doing it, I'm not sure.
   - These buffer into RAM. Try not to send full 32-bit color PNGs.
     - If they are over 32K (the `_TEMPFILE_THRESHOLD` constant), they will try to buffer to flash, but that is also quite limited. Buffering to an SD card is not currently implemented.
-- `image/x.pico-rle`, an update of a streamable image format I made for Tufty, will also display fullscreen.
+- `image/x.pico-rle`, an update of a lossless streamable image format I made for Tufty, will also display fullscreen.
   - This is a streaming format that goes straight from the network to the display, so doesn't have memory limitations.
-  - Since it writes through PicoGraphics, it is always subject to that dithering, and is unfortunately quite slow.
+  - Since it writes through PicoGraphics, it is always subject to that dithering, and is unfortunately slower.
 - Empty responses *of any type* will leave the screen as-is.
 - A `Refresh` header with normal `time; url` syntax, where after `time` seconds it will fetch `url`.
   - The time will be rounded up to at least one minute.
@@ -102,10 +102,6 @@ Things PaperThin does not understand:
   No `chunked`, no `gzip`, none of that.
 - Anything that is not UTF-8.
 - Any other MIME type.
-
-Things it might understand one day:
-
-- `image/x.picographics-script`, a description of PicoGraphics drawing commands.
 
 ## Development
 
