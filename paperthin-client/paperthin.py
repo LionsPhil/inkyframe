@@ -45,10 +45,10 @@ def measure_voltage() -> float:
     # running on battery, we're starting from scratch each wakeup though, so
     # will read it regularly.
     # https://gist.github.com/helgibbons/3ce1a3b6eb24ca6f27a66455caba9809
-    # Leave HOLD_VSYS_EN alone; MicroPython handles enabling it, and hopefully
-    # the libraries disabling it again on turn_off/sleep_for. Managing it
-    # manually here only interferes (and disabling it is an instant poweroff).
+    # Leave HOLD_VSYS_EN alone; inky_frame handles enabling/disabling it.
     print("Measuring voltage...")
+    spi_output = (machine.Pin(25, machine.Pin.OUT))
+    spi_output.value(True)
     vsys = machine.ADC(29)
     voltage = vsys.read_u16() * 3 * 3.3 / 65535
     print(f"...VSYS is {voltage}v")
