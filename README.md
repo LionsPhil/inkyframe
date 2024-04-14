@@ -63,6 +63,7 @@ PaperThin requests:
 - Query parameters (`?foo=bar+baz&quux=garply`...) for:
   - The display size, `w` and `h`.
   - The hostname, `hostname`, set in the script (and attempted to set on the network).
+  - The battery voltage, `v`, if not on USB power.
   - `error`, for some very narrow cases.
 
 Responses PaperThin understands:

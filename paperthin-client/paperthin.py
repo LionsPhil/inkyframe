@@ -39,6 +39,21 @@ display = PicoGraphics(DISPLAY)
 display_w, display_h = display.get_bounds()
 vbus = machine.Pin('WL_GPIO2', machine.Pin.IN)
 
+def measure_voltage() -> float:
+    # Do a temporary voltage read. One of the pins involved in this is also
+    # used in the wireless, so we only do it before initializing that. When
+    # running on battery, we're starting from scratch each wakeup though, so
+    # will read it regularly.
+    # https://gist.github.com/helgibbons/3ce1a3b6eb24ca6f27a66455caba9809
+    print("Measuring voltage...")
+    hold_vsys_en_pin = machine.Pin(2, machine.Pin.OUT)
+    hold_vsys_en_pin.value(True)
+    vsys = machine.ADC(29)
+    voltage = vsys.read_u16() * 3 * 3.3 / 65535
+    hold_vsys_en_pin.init(machine.Pin.IN)
+    print(f"...VSYS is {voltage}v")
+    return voltage
+
 def get_wakeup_url() -> typing.Optional[str]:
     """Figure out if we're waking up with an intent to load something."""
     # Currently no need for JSON. Avoiding inky_helper, because this doesn't
@@ -249,7 +264,8 @@ def aggressive_urlencode_byte(byte: int) -> str:
     """URLencode a single byte (URLencoding is bytewise, not charwise)."""
     if ((byte >= ord('0') and byte <= ord('9')) or
         (byte >= ord('A') and byte <= ord('Z')) or
-        (byte >= ord('a') and byte <= ord('z'))):
+        (byte >= ord('a') and byte <= ord('z')) or
+        (byte in [ord('.')])):
         return chr(byte)
     else:
         return "%{0:02x}".format(byte)
@@ -571,6 +587,12 @@ if button_down is not None:
 # VBUS and VSYS are separate pins, but I don't know if we're still fighting for
 # the ADC, and we only need a single reading.
 on_usb_power = vbus.value()
+voltage: typing.Optional[float] = None
+if not on_usb_power:
+    voltage = measure_voltage()
+    # If we *are* on USB power, the interference with WiFi means we won't be
+    # re-reading voltage anyway, so even forcing a read here (which will get
+    # you a sensible 5v-ish) will rapidly become stale.
 # Get us online.
 wlan = connect_wifi_or_die()
 
@@ -632,6 +654,8 @@ while True:
     }
     if error is not None:
         query_params["error"] = error
+    if voltage is not None:
+        query_params["v"] = str(voltage)
     # We don't have urllib.parse on the Inky Frame, else this could be:
     # url = url + "?" + urllib.parse.urlencode(query_args)
     encoded_query_params = form_urlencode(query_params)
