@@ -76,12 +76,9 @@ def red_screen_of_death(message: str,
     # flush=True print() form, or the full sys.stdout.flush().
     print(f"RSOD: {message}")  # Should flush.
     time.sleep(0.1)  # Try to encourage serial to flush BEFORE display.update().
-    inky_frame.led_busy.on()  # Christmas tree mode (but not network)!
-    inky_frame.button_a.led_on()
-    inky_frame.button_b.led_on()
-    inky_frame.button_c.led_on()
-    inky_frame.button_d.led_on()
-    inky_frame.button_e.led_on()
+    inky_frame.led_busy.on()  # Warning light on, wifi light off.
+    # (This used to christmas-tree light up all the buttons, but it seems it
+    # can cause enough voltage sag to sometimes mess up the display refresh.)
     inky_frame.led_wifi.off()
     if autoreboot and _ERROR_HIDING:
         if _ERROR_HIDING_MEDIDATE:
