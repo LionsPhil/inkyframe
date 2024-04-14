@@ -485,8 +485,8 @@ def maybe_buffer_to_file(size: int, socket: usocket.socket) -> bool:
 
 def maybe_double_clear() -> None:
     if _DOUBLE_UPDATE_CLEAR:
-        print("...preliminary clear to taupe...")  # Should flush.
-        display.set_pen(inky_frame.TAUPE)
+        print("...preliminary clear to white...")  # Should flush.
+        display.set_pen(inky_frame.WHITE)
         display.clear()
         display.update()
         print("...proceeding to update framebuffer...")

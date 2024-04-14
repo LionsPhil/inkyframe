@@ -54,4 +54,4 @@ _WIFI_FORCE_RECONNECT = True
 # will also raise to ~80 seconds.)
 # https://forums.pimoroni.com/t/inky-frame-7-3-burn-in/24574
 # Error screens ignore this; they're delayed enough as it is.
-_DOUBLE_UPDATE_CLEAR = False
+_DOUBLE_UPDATE_CLEAR = True
