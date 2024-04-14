@@ -103,6 +103,10 @@ Things PaperThin does not understand:
 - Anything that is not UTF-8.
 - Any other MIME type.
 
+💡 On battery, there's a delay between the buttons causing the pico to wake up, and starting MicroPython and being able to read them.
+If you're pressing the A-to-E buttons to change screen on battery, hold them a moment until the matching LED lights to confirm the press has been read.
+Otherwise, PaperThin won't know what happened, and will just follow the last refresh or default `/hello` handler.
+
 ## Development
 
 ### Flask
