@@ -36,12 +36,15 @@ def find_page_for_week(session: requests.Session) -> str|None:
         match = _WEEK_REGEX.search(line)
         if match:
             return match.group(1)
+
+    logging.error('Did not find URL for the week')
     return None
 
 def find_pictures_of_week(session: requests.Session, url: str|None
                           ) -> list[tuple[str, str]]:
     """Given a gallery page URL, return a list of [src, alt] for the images."""
     if not url:
+        logging.error('find_pictures_of_week() not given URL')
         return None
     try:
         response = session.get(url, stream=True)
@@ -94,12 +97,14 @@ def find_pictures_of_week(session: requests.Session, url: str|None
 
     return urls
 
-def wildlife() -> tuple[Image.Image, str]|None:
+def wildlife() -> tuple[Image.Image|None, str]:
     session = requests.Session()
+    session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0'})
     gallery_url = find_page_for_week(session)
     pictures = find_pictures_of_week(session, gallery_url)
     if not pictures:
-        return None
+        logging.error('No pictures of the week found')
+        return None, ''
 
     # There are more pictures in a week than days.
     # Randomly select one each time instead.
@@ -111,7 +116,7 @@ def wildlife() -> tuple[Image.Image, str]|None:
         response.raise_for_status()
     except requests.exceptions.RequestException:
         logging.exception('Fetching picture failed')
-        return None
+        return None, ''
     image = Image.open(BytesIO(response.content))
     # Actually read the image data now, not later.
     image.load()
