@@ -107,6 +107,9 @@ Things PaperThin does not understand:
 If you're pressing the A-to-E buttons to change screen on battery, hold them a moment until the matching LED lights to confirm the press has been read.
 Otherwise, PaperThin won't know what happened, and will just follow the last refresh or default `/hello` handler.
 
+Three AA batteries power the display for about 1,200 updates; that's fetching and decoding a PRI image from the network each time, and doing the double-refresh screen painting.
+Exact life will vary by lots of things; the "danger zone" where it seems to start to brownout and get stuck updating is below 3.1 volts.
+
 ## Development
 
 ### Flask
