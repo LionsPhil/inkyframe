@@ -9,6 +9,7 @@ import micropython
 import network
 import os
 import pngdec
+import random
 import time
 import usocket
 
@@ -498,8 +499,9 @@ def maybe_buffer_to_file(size: int, socket: usocket.socket) -> bool:
 
 def maybe_double_clear() -> None:
     if _DOUBLE_UPDATE_CLEAR:
-        print("...preliminary clear to white...")  # Should flush.
-        display.set_pen(inky_frame.WHITE)
+        print("...preliminary clear...")  # Should flush.
+        # Clear to a random solid colour; these are 0 (black) to 6 (orange)
+        display.set_pen(random.randint(0, 6))
         display.clear()
         display.update()
         print("...proceeding to update framebuffer...")
