@@ -561,6 +561,14 @@ def display_response(headers: typing.Dict[str, str],
         display_using_decoder(headers, socket, decoder, mode=mode)
     elif type == "image/x.pico-rle":
         # While slow and dumb, this format streams directly to the display.
+        if _DOUBLE_UPDATE_CLEAR:
+            # Unfortunately, PicoGraphics currently only exposes a blocking
+            # update, which means the pico microprocessor will just be
+            # busy-looping during maybe_double_clear(), rather than reading the
+            # socket and decoding the image. Make the timeout more patient so
+            # we don't give up on it in-flight due to our own silliness.
+            # https://github.com/pimoroni/pimoroni-pico/issues/936
+            socket.settimeout(_HTTP_TIMEOUT + 40)
         inky_frame.led_wifi.brightness(_WIFI_LED_DECODING_BRIGHTNESS)
         maybe_double_clear()
         picorle_decode(socket)
