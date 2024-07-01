@@ -8,7 +8,7 @@ have_overlay = True
 try:
     import overlay
 except ModuleNotFoundError:
-    # File doesn't exist is fine; there's no customization. Stub in a no-op.
+    # File doesn't exist is fine; there's no customization. Don't call it.
     have_overlay = False
 # ImportError, however, means customization was attempted and is bad.
 # Let it propagate.
@@ -60,21 +60,23 @@ def button(index: int, request: flask.Request) -> flask.Response:
     except IndexError:
         return paperutils.respond_txt("Directory for that button has no files")
     response: flask.Response
+    refresh_time = None
     if filename.lower().endswith(('jpg', 'png', 'pri')):
         with Image.open(os.path.join(directory, filename)) as im:
             if have_overlay and hasattr(overlay, 'overlay'):
-                overlaid_im = overlay.overlay(im, request)
+                (overlaid_im, refresh_time) = overlay.overlay(im, request)
             else:
                 overlaid_im = im.copy()
             response = paperutils.encode_for_inky(overlaid_im, request)
             overlaid_im.close()
     else:
         response = paperutils.respond_file(directory, filename, True)
-    # 10 minutes less one, for PRI decode and e-ink refresh.
-    # Flask wasted hours of my time here because request.base_url is SUPPOSED
-    # to include the port if nonstandard...and just doesn't! Yay! Because the
-    # PaperThin client was leaving it out of the Host header. :C
-    paperutils.add_refresh(response, 540, request.base_url)
+
+    if refresh_time is None:
+        # 10 minutes less one, for PRI decode and e-ink refresh.
+        refresh_time = 540
+    if response.headers.get('Refresh') is None:
+        paperutils.add_refresh(response, refresh_time, request.base_url)
     return response
     # Encoding findings:
     # inky_dither(suggested_enhance(im), use_wand=False)  # <-- Oversaturates
