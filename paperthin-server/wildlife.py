@@ -12,7 +12,8 @@ from PIL import Image
 
 _BASE_PAGE = 'https://www.theguardian.com/environment/series/weekinwildlife'
 _WEEK_REGEX = re.compile(
-    r'href="(https://www.theguardian.com/environment/gallery/[^"]+)"')
+    r'href="(/environment/gallery/[^"]+)"')
+_WEEK_PREFIX = 'https://www.theguardian.com'
 _PICTURE_START_REGEX = re.compile(r'<picture>')
 _PICTURE_END_REGEX = re.compile(r'</picture>')
 _SRCSET_REGEX = re.compile(r'srcset="([^"]+)"')
@@ -35,7 +36,7 @@ def find_page_for_week(session: requests.Session) -> str|None:
     for line in response.iter_lines(decode_unicode=True):
         match = _WEEK_REGEX.search(line)
         if match:
-            return match.group(1)
+            return f'{_WEEK_PREFIX}{match.group(1)}'
 
     logging.error('Did not find URL for the week')
     return None
