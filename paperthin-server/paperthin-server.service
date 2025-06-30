@@ -1,0 +1,17 @@
+[Unit]
+Description=PaperThin server
+
+[Service]
+Restart=on-failure
+EnvironmentFile=/etc/default/paperthin-server
+WorkingDirectory=/home/pi/inkyframe/paperthin-server/
+# Be sure to set the bind address to your server's local IP!
+ExecStart=/usr/bin/gunicorn --bind=192.168.0.2:5000 --timeout 120 --max-requests 10 --reload --access-logfile - 'app:app'
+Type=simple
+User=pi
+StandardInput=null
+StandardOutput=null
+StandardError=journal
+NoNewPrivileges=true
+
+[Install]
