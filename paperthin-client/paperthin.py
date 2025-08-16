@@ -23,10 +23,11 @@ except ImportError:
 from paperthin_config import (PicoGraphics, DISPLAY, _BASE_URL, _HELLO_PATH,
                               _BUTTON_PATHS, _HEARTBEAT_PATH, _HOSTNAME,
                               _USER_AGENT, _WIFI_COUNTRY, _ERROR_RETRY_TIME,
-                              _ERROR_HIDING, _ERROR_HIDING_MEDIDATE,
-                              _ERROR_RERAISE, _WIFI_TIMEOUT, _HTTP_TIMEOUT,
-                              _TEMPFILE_THRESHOLD, _TEMPFILE_NAME,
-                              _URLFILE_NAME, _WIFI_LED_CONNECTING_BRIGHTNESS,
+                              _ERROR_NETWORK_RETRY_TIME, _ERROR_HIDING,
+                              _ERROR_HIDING_MEDIDATE, _ERROR_RERAISE,
+                              _WIFI_TIMEOUT, _HTTP_TIMEOUT, _TEMPFILE_THRESHOLD,
+                              _TEMPFILE_NAME, _URLFILE_NAME,
+                              _WIFI_LED_CONNECTING_BRIGHTNESS,
                               _WIFI_LED_FETCHING_BRIGHTNESS,
                               _WIFI_LED_DECODING_BRIGHTNESS,
                               _WIFI_LED_HEARTBEAT_BRIGHTNESS,
@@ -254,8 +255,14 @@ def connect_wifi_or_die() -> network.WLAN:
             False
         )
     except RuntimeError as e:
-        red_screen_of_death(f"Unable to get an internet connection.\n\n{e}",
-                            True, e)
+        if _ERROR_NETWORK_RETRY_TIME is not None:
+            print(f"Retrying from network error: {e}")
+            inky_frame.led_busy.on()
+            inky_frame.sleep_for(_ERROR_NETWORK_RETRY_TIME)
+            machine.reset()
+        else:
+            red_screen_of_death(f"Unable to get an internet connection.\n\n{e}",
+                                True, e)
     (ip_addr, subnet_mask, gateway, dns_server) = wlan.ifconfig()
     print(f"Connected! (IP: {ip_addr}/{subnet_mask}; " +
           f"gateway: {gateway}; DNS: {dns_server})")

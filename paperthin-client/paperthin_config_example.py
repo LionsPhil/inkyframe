@@ -20,6 +20,9 @@ _WIFI_COUNTRY = "GB"
 # After a retryable serious error (like failing to connect to the wireless),
 # reboot after this many minutes.
 _ERROR_RETRY_TIME = 15
+# For connecting to the network only, if non-None, hide the error and retry
+# after this many minutes.
+_ERROR_NETWORK_RETRY_TIME = 1
 # Don't repaint the screen for retryable serious errors; keep the previous
 # display.
 _ERROR_HIDING = True
