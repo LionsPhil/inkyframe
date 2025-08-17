@@ -55,6 +55,8 @@ _WIFI_FORCE_RECONNECT = True
 # This will delay reading the HTTP response for ~40 seconds for PRI; make sure
 # your server config is patient enough with clients. (The total update time
 # will also raise to ~80 seconds.)
+# This can partially mitigate an issue when running on USB power; it is not
+# necessary when only powering from the battery connector.
 # https://forums.pimoroni.com/t/inky-frame-7-3-burn-in/24574
 # Error screens ignore this; they're delayed enough as it is.
-_DOUBLE_UPDATE_CLEAR = True
+_DOUBLE_UPDATE_CLEAR = False
